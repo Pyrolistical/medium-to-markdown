@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from "node:fs/promises";
 import puppeteer from "puppeteer";
 import TurndownService from "turndown";
 
@@ -90,13 +91,32 @@ if (process.argv.length < 3) {
 } else {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto(process.argv[2]);
+  const url = process.argv[2];
+  await page.goto(url);
+  const author = await page.$eval(
+    ".pw-author a",
+    (element) => element.innerText
+  );
+  const publishDate = await page.$eval(
+    ".pw-published-date span",
+    (element) => element.innerText
+  );
   const html = await page.$eval(
     "article section",
     (element) => element.innerHTML
   );
-
   const markdown = turndownService.turndown(html);
-  console.log(markdown); //=> Markdown content of medium post
+  const {
+    groups: { slug },
+  } = url.match(/^https:\/\/blog\.battlefy\.com\/(?<slug>.+)-[^-]+$/);
+  const metadata = { url, slug, author, publishDate };
+  await mkdir(`./dist/${slug}`, {
+    recursive: true,
+  });
+  await writeFile(
+    `./dist/${slug}/metadata.json`,
+    JSON.stringify(metadata, null, 2)
+  );
+  await writeFile(`./dist/${slug}/post.md`, markdown);
   await browser.close();
 }
