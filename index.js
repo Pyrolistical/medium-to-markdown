@@ -42,13 +42,6 @@ const converters = {
     replacement(content, node) {
       const href = node.getAttribute("href");
 
-      // following code added in to handle medium relative urls
-      // otherwise the link to article "foo" in the new website would go to
-      // https://newwebsite.com/@username/foo-a16a6fcf49c7 which doesn't exist
-      if (href.startsWith("/")) {
-        href = "https://medium.com" + href;
-      }
-
       const title = node.title ? ` "${node.title}"` : "";
       return `[${content}](${href}${title})`;
     },
